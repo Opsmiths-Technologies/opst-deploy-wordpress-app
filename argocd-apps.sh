@@ -4,7 +4,7 @@
 set -e
 
 # Variables
-PROJECT_NAME="kube-infra-stack"
+PROJECT_NAME="apps-deployment"
 NAMESPACE="argocd"
 CHART_PATH="kubernetes/argocd-apps"
 VALUES_FILE="$CHART_PATH/values.yaml"
