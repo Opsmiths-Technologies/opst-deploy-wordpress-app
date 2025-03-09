@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: apps-deployment-mngr-app
+  namespace: argocd
+spec:
+  project: apps-deployment
+  source:
+    repoURL: git@github.com:Opsmiths-Technologies/opst-deploy-wordpress-app.git
+    targetRevision: HEAD
+    path: kubernetes/appsets
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    syncOptions:
+    - CreateNamespace=true  
+    automated: 
+      prune: true 
+      selfHeal: true

@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: wordpress-app
+spec:
+  generators:
+    # Generator for apps that should deploy to all cluster.
+    - matrix:
+        generators:
+          - clusters: {}
+          - list:
+              elements:
+                - appName: wordpress
+                  namespace: wordpress-app
+                  path: kubernetes/apps/wordpress/dev
+
+  template:
+    metadata:
+      name: "{{appName}}"
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: ".;.."
+    spec:
+      project: apps-deployment
+      source:
+        repoURL: git@github.com:Opsmiths-Technologies/opst-deploy-wordpress-app.git
+        targetRevision: HEAD
+        path: "{{path}}"
+      destination:
+        name: "{{name}}"
+        namespace: "{{namespace}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

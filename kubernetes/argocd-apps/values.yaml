@@ -1,0 +1,32 @@
+argocd-apps:
+  projects:
+    apps-deployment:
+      namespace: argocd
+      sourceRepos:
+        - '*'
+      destinations:
+        - namespace: '*'
+          server: https://kubernetes.default.svc
+      clusterResourceWhitelist:
+        - group: '*'
+          kind: '*'
+      orphanedResources:
+        warn: false
+
+  applications:
+    apps-deployment-root-app:
+      namespace: argocd
+      project: apps-deployment
+      source:
+        repoURL: git@github.com:Opsmiths-Technologies/opst-deploy-wordpress-app.git
+        targetRevision: HEAD
+        path: kubernetes/argocd-mngr-app/
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: argocd
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=true
+        automated:
+          prune: true
+          selfHeal: true

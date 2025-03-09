@@ -1,0 +1,128 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress-app
+  namespace: wordpress
+  labels:
+    app: wordpress
+spec:
+  revisionHistoryLimit: 2
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: wordpress
+  template:
+    metadata:
+      labels:
+        app: wordpress
+    spec:
+      securityContext:
+        runAsUser: 44444
+        runAsGroup: 44444
+        fsGroup: 44444
+        fsGroupChangePolicy: "Always"
+      volumes:
+        - name: wp-data
+          persistentVolumeClaim:
+            claimName: wp-data-claim
+        - name: nginx-conf
+          configMap:
+            name: nginx-config
+      initContainers:
+        - name: init-wp
+          image: wordpress  # Kustomize will replace this with the full image
+          command:
+            - sh
+            - -c
+            - |
+              echo "Initializing WordPress files..."
+              cp -R /usr/src/wordpress/* /var/www/html/
+          securityContext:
+            runAsUser: 44444
+            runAsGroup: 44444
+          volumeMounts:
+            - name: wp-data
+              mountPath: /var/www/html
+      containers:
+        - name: wordpress
+          image: wordpress  # Kustomize will replace this with the full image
+          imagePullPolicy: Always
+          ports:
+            - name: php
+              containerPort: 9000
+          resources:
+            requests:
+              memory: "400Mi"
+              cpu: "500m"
+            limits:
+              memory: "1024Mi"
+              cpu: "1"
+          securityContext:
+            allowPrivilegeEscalation: false
+            privileged: false
+            runAsUser: 44444
+            runAsGroup: 44444              
+          env:
+            - name: WORDPRESS_DB_HOST
+              value: "mysql-service"
+            - name: WORDPRESS_DB_NAME
+              value: "wordpress"
+            - name: WORDPRESS_DB_USER
+              value: "wordpress"
+            - name: WORDPRESS_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: mysql-password
+          volumeMounts:
+            - name: wp-data
+              mountPath: /var/www/html
+        - name: nginx
+          image: nginx  # Kustomize will replace this with the full image
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+          volumeMounts:
+            - name: wp-data
+              mountPath: /var/www/html
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d/
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "200m"
+            limits:
+              memory: "512Mi"
+              cpu: "512m"
+          workingDir: /var/www/html/    
+          securityContext:
+            runAsUser: 44444
+            runAsGroup: 44444              
+        - name: mysql
+          image: mysql:8.0
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: mysql-root-password
+            - name: MYSQL_DATABASE
+              value: "wordpress"
+            - name: MYSQL_USER
+              value: "wordpress"
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: mysql-password
+          volumeMounts:
+            - name: wp-data
+              mountPath: /var/lib/mysql
