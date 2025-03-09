@@ -11,7 +11,7 @@ resources:
 images:
   - name: wordpress
     newName: 225320283044.dkr.ecr.eu-central-1.amazonaws.com/cicd-infra
-    newTag: wordpress-${ENVIRONMENT}-0  # Placeholder, updated by Jenkins
+    newTag: wordpress-dev-7
   - name: nginx
     newName: 225320283044.dkr.ecr.eu-central-1.amazonaws.com/cicd-infra
-    newTag: nginx-${ENVIRONMENT}-0      # Placeholder, updated by Jenkins
+    newTag: nginx-dev-7
